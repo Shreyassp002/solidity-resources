@@ -17,12 +17,9 @@ async function main() {
 
   console.log("Deploying contract...");
 
-  const nonce = await provider.getTransactionCount(wallet.address, "latest");
-  const contract = await contractFactory.deploy({
-    nonce: nonce,
-    gasLimit: 5000000,
-  });
-
+  // const nonce = await provider.getTransactionCount(wallet.address, "latest");
+  const contract = await contractFactory.deploy();
+  await contract.waitForDeployment();
   const contractAddress = contract.target;
 
   console.log("Contract deployed to:", contractAddress);
