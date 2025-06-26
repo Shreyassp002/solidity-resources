@@ -14,7 +14,7 @@ async function main() {
     const contractAddress = await simpleStorage.getAddress()
     console.log("Contract deployed to:", contractAddress)
 
-    if (network.config.chainId === 11155111 || process.env.ETHERSCAN_API_KEY) {
+    if (network.config.chainId === 11155111 && process.env.ETHERSCAN_API_KEY) {
         console.log("Verifying contract on Etherscan...")
         await simpleStorage.deploymentTransaction().wait(6) // wait for 6 confirmations
         // Verify the contract
