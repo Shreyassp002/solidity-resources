@@ -2752,7 +2752,7 @@ __metadata:
     hardhat-gas-reporter: "npm:^2.3.0"
     prettier: "npm:^3.6.1"
     prettier-plugin-solidity: "npm:^2.0.0"
-    solidity-coverage: "npm:^0.8.0"
+    solidity-coverage: "npm:^0.8.16"
     typechain: "npm:^8.3.0"
   languageName: unknown
   linkType: soft
@@ -4573,7 +4573,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"solidity-coverage@npm:^0.8.0":
+"solidity-coverage@npm:^0.8.16":
   version: 0.8.16
   resolution: "solidity-coverage@npm:0.8.16"
   dependencies:

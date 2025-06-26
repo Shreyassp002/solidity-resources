@@ -2,6 +2,8 @@ require("@nomicfoundation/hardhat-toolbox")
 require("dotenv").config()
 require("@nomicfoundation/hardhat-verify")
 require("./tasks/block-number")
+require("hardhat-gas-reporter")
+require("solidity-coverage")
 
 /** @type import('hardhat/config').HardhatUserConfig */
 
@@ -30,6 +32,13 @@ module.exports = {
         // Disabled by default
         // Doesn't need an API key
         enabled: true,
+    },
+    gasReporter: {
+        enabled: true,
+        outputFile: "gas-report.txt",
+        noColors: true,
+        currency: "USD",
+        // coinmarketcap: COINMARKET_API_KEY
     },
     solidity: "0.8.7",
 }
