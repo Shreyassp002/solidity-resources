@@ -8,7 +8,6 @@ describe("SimpleStorage", function () {
     beforeEach(async function () {
         simpleStorageFactory = await ethers.getContractFactory("SimpleStorage")
         simpleStorage = await simpleStorageFactory.deploy()
-        
     })
 
     it("Should start with a favorite number of 0", async function () {
@@ -21,11 +20,11 @@ describe("SimpleStorage", function () {
     })
 
     it("Should update the favorite number", async function () {
-      const expectedValue = "45"
-      const transactionResponse = await simpleStorage.store(expectedValue)
-      await transactionResponse.wait(1)
+        const expectedValue = "45"
+        const transactionResponse = await simpleStorage.store(expectedValue)
+        await transactionResponse.wait(1)
 
-      const currentValue = await simpleStorage.retrieve()
-      assert.equal(currentValue.toString(), expectedValue)
+        const currentValue = await simpleStorage.retrieve()
+        assert.equal(currentValue.toString(), expectedValue)
     })
 })
