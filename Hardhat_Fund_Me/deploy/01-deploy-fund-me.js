@@ -1,9 +1,18 @@
 // const { getAccountPath } = require("ethers");
 
-const { networks } = require("../hardhat.config")
+const { network } = require("hardhat")
+const { networkConfig } = require("../helper-hardhat-config")
 
 module.exports = async ({ getNamedAccounts, deployments }) => {
-    const{ deploy, log} = deployments
-    const{deployer} = await getNamedAccounts
-    const chainId = networks.config.chainId
+    const { deploy, log } = deployments
+    const { deployer } = await getNamedAccounts()
+    const chainId = network.config.chainId
+
+    const ethUsdPriceFeedAddress = networkConfig[chainId]["ethUsdPriceFeed"]
+
+    const FundMe = await deploy("FundMe", {
+        from: deployer,
+        args: [ethUsdPriceFeedAddress], // put priceFeed Address
+        log: true,
+    })
 }
