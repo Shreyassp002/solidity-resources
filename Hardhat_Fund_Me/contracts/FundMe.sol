@@ -38,18 +38,24 @@ contract FundMe {
         _;
     }
 
+    //functions
     constructor(address priceFeedAddress) {
         i_owner = msg.sender;
         priceFeed = AggregatorV3Interface(priceFeedAddress);
     }
 
-    fallback() external payable {
-        fund();
-    }
+    // fallback() external payable {
+    //     fund();
+    // }
 
-    receive() external payable {
-        fund();
-    }
+    // receive() external payable {
+    //     fund();
+    // }
+
+    /**
+     * @notice This function funds this contract
+     * @dev This implements price feeds as our library
+     */
 
     function fund() public payable {
         require(

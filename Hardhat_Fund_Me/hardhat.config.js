@@ -7,6 +7,7 @@ require("@nomicfoundation/hardhat-verify")
 require("hardhat-gas-reporter")
 require("solidity-coverage")
 require("hardhat-deploy")
+require("hardhat-deploy-ethers")
 
 /** @type import('hardhat/config').HardhatUserConfig */
 
