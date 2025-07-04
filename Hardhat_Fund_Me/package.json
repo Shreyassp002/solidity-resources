@@ -1,4 +1,7 @@
 {
+  "name": "hardhat-fund-me",
+  "author": "Shreyas Patil",
+  "version": "1.0.0",
   "devDependencies": {
     "@chainlink/contracts": "^1.4.0",
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
@@ -24,5 +27,13 @@
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e",
   "dependencies": {
     "solhint": "^5.1.0"
+  },
+  "scripts": {
+    "test": "yarn hardhat test",
+    "test:staging": "yarn hardhat test --network sepolia",
+    "lint": "yarn solhint 'contracts/**/*.sol'",
+    "lint:fix": "yarn solhint 'contracts/**/*.sol' --fix",
+    "format": "yarn prettier --write .",
+    "coverage": "yarn hardhat coverage"
   }
 }
