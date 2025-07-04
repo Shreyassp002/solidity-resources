@@ -33,3 +33,5 @@ ignition/deployments/chain-31337
 gas-report.txt
 coverage.json
 coverage
+
+/deployments
