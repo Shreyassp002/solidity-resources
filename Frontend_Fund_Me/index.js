@@ -3,9 +3,13 @@ import { abi, contractAddress } from "./constants.js"
 
 const connectButton = document.getElementById("connectButton")
 const fundButton = document.getElementById("fundButton")
+const balanceButton = document.getElementById("balanceButton")
+const withdrawButton = document.getElementById("withdrawButton")
 
 connectButton.onclick = connect
 fundButton.onclick = fund
+balanceButton.onclick = getBalance
+withdrawButton.onclick = withdraw
 
 async function connect() {
     if (typeof window.ethereum != "undefined") {
@@ -18,9 +22,17 @@ async function connect() {
     }
 }
 
+async function getBalance() {
+    if (typeof window.ethereum != undefined) {
+        const provider = new ethers.BrowserProvider(window.ethereum)
+        const balance = await provider.getBalance(contractAddress)
+        console.log(ethers.formatEther(balance))
+    }
+}
+
 async function fund() {
-    const ethAmount = "77"
-    console.log("Funding with:", ethAmount)
+    const ethAmount = document.getElementById("ethAmount").value
+    console.log("Funding with:", ethAmount, "Ethereum")
 
     if (typeof window.ethereum != "undefined") {
         // provider / connection to the blockchain
@@ -45,9 +57,31 @@ async function fund() {
 }
 
 async function listenForTransactionMine(transactionResponse, provider) {
-    console.log(`Mining ${transactionResponse.hash}....`)
+    console.log(`Mining ${transactionResponse.hash}...`)
+    try {
+        const receipt = await provider.waitForTransaction(
+            transactionResponse.hash,
+        )
+        console.log(`Completed with ${receipt.blockNumber} confirmations`)
+        return receipt
+    } catch (error) {
+        console.error("Error waiting for transaction:", error)
+        throw error
+    }
+}
 
-    //listen for this transaction to finish
-    const receipt = await provider.waitForTransaction(transactionResponse.hash)
-    console.log(`Completed with ${receipt.blockNumber} confirmations`)
+async function withdraw() {
+    if (typeof window.ethereum != undefined) {
+        console.log("Withdrawing...")
+        const provider = new ethers.BrowserProvider(window.ethereum)
+        const signer = await provider.getSigner()
+        const contract = new ethers.Contract(contractAddress, abi, signer)
+
+        try {
+            const transactionResponse = await contract.withdraw()
+            await listenForTransactionMine(transactionResponse, provider)
+        } catch (error) {
+            console.log(error)
+        }
+    }
 }
