@@ -6,6 +6,10 @@ async function main() {
     await getWeth()
     // const { deployer } = await getNamedAccounts
 
+    await getLendingPoolAddress()
+}
+
+async function getLendingPoolAddress() {
     //lending pool provider address --> 0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e
     const poolAddressesProviderAddress = "0x2f39d218133AFaB8F2B819B1066c7E434Ad94E9e" // Mainnet V3
 
@@ -27,6 +31,8 @@ async function main() {
         poolAddress,
     )
     console.log("Pool contract connected!")
+
+    return pool
 }
 
 main()
