@@ -18,6 +18,10 @@ async function main() {
     await checkBorrowingCapacity(pool)
 
     await borrowFromAave(pool)
+
+    // Wait a bit to see the borrowed amount, then repay
+    console.log("\n=== REPAYING LOAN ===")
+    await repayToAave(pool)
 }
 
 async function getLendingPoolAddress() {
@@ -40,22 +44,53 @@ async function getLendingPoolAddress() {
     return pool
 }
 
-async function depositToAave(pool) {
+async function approveToken(tokenAddress, spenderAddress, amount, tokenName = "Token") {
     const { deployer } = await getNamedAccounts()
-
-    // Get signer and WETH contract
     const deployerSigner = await ethers.getSigner(deployer)
-    const iweth = await ethers.getContractAt("IWETH", wethAddress)
 
     try {
-        // Step 1: Approve Aave Pool to spend WETH (WETH already obtained from getWeth())
-        console.log("Approving WETH for Aave...")
-        const approveTx = await iweth.connect(deployerSigner).approve(pool.target, Deposit_Amount)
-        await approveTx.wait(1)
-        console.log("✅ WETH approved!")
+        console.log(
+            `Approving ${tokenName} for ${spenderAddress.slice(0, 6)}...${spenderAddress.slice(-4)}...`,
+        )
 
-        // Step 2: Supply WETH to Aave V3
-        console.log("Supplying WETH to Aave...")
+        const token = await ethers.getContractAt("IERC20", tokenAddress)
+
+        // Check current allowance first
+        const currentAllowance = await token.allowance(deployer, spenderAddress)
+
+        if (currentAllowance >= amount) {
+            console.log(
+                `✅ ${tokenName} already has sufficient allowance: ${ethers.formatEther(currentAllowance)}`,
+            )
+            return true
+        }
+
+        // If allowance is insufficient, approve the required amount
+        const approveTx = await token.connect(deployerSigner).approve(spenderAddress, amount)
+        await approveTx.wait(1)
+
+        console.log(`✅ ${tokenName} approved! Amount: ${ethers.formatEther(amount)}`)
+        return true
+    } catch (error) {
+        console.log(`❌ ${tokenName} approval failed:`, error.message)
+        return false
+    }
+}
+
+async function depositToAave(pool) {
+    const { deployer } = await getNamedAccounts()
+    const deployerSigner = await ethers.getSigner(deployer)
+
+    try {
+        // Step 1: Approve Aave Pool to spend WETH
+        const approvalSuccess = await approveToken(wethAddress, pool.target, Deposit_Amount, "WETH")
+        if (!approvalSuccess) {
+            console.log("❌ WETH approval failed, cannot proceed with deposit")
+            return
+        }
+
+        // Step 2: Supply WETH to Aave
+        console.log("\nSupplying WETH to Aave...")
         const supplyTx = await pool.connect(deployerSigner).supply(
             wethAddress, // asset
             Deposit_Amount, // amount
@@ -82,7 +117,7 @@ async function borrowFromAave(pool) {
     const deployerSigner = await ethers.getSigner(deployer)
 
     try {
-        console.log("Borrowing DAI from Aave...")
+        console.log("\nBorrowing DAI from Aave...")
 
         // Borrow DAI against WETH collateral
         const borrowTx = await pool.connect(deployerSigner).borrow(
@@ -107,6 +142,86 @@ async function borrowFromAave(pool) {
         console.log(`DAI Debt Balance: ${ethers.formatEther(debtBalance)} DAI`)
     } catch (error) {
         console.log("Borrow failed:", error.message)
+    }
+}
+
+async function repayToAave(pool) {
+    const { deployer } = await getNamedAccounts()
+    const deployerSigner = await ethers.getSigner(deployer)
+
+    try {
+        console.log("Starting repayment process...")
+
+        // Get DAI contract
+        const daiToken = await ethers.getContractAt("IERC20", daiAddress)
+
+        // Check current DAI balance
+        const daiBalance = await daiToken.balanceOf(deployer)
+        console.log(`Current DAI Balance: ${ethers.formatEther(daiBalance)} DAI`)
+
+        // Get current debt amount
+        const reserveData = await pool.getReserveData(daiAddress)
+        const debtToken = await ethers.getContractAt("IERC20", reserveData.variableDebtTokenAddress)
+        const debtBalance = await debtToken.balanceOf(deployer)
+        console.log(`Current DAI Debt: ${ethers.formatEther(debtBalance)} DAI`)
+
+        if (debtBalance > 0) {
+            // Determine repay amount (use full debt balance or available DAI balance, whichever is smaller)
+            const repayAmount = daiBalance >= debtBalance ? debtBalance : daiBalance
+
+            console.log(`Repaying: ${ethers.formatEther(repayAmount)} DAI`)
+
+            // Step 1: Approve DAI for repayment using reusable function
+            const approvalSuccess = await approveToken(daiAddress, pool.target, repayAmount, "DAI")
+            if (!approvalSuccess) {
+                console.log("❌ DAI approval failed, cannot proceed with repayment")
+                return
+            }
+
+            // Step 2: Repay the loan
+            console.log("Repaying DAI loan...")
+            const repayTx = await pool.connect(deployerSigner).repay(
+                daiAddress, // asset to repay
+                repayAmount, // amount to repay (or use ethers.MaxUint256 for full repayment)
+                2, // interestRateMode (2 = variable rate)
+                deployer, // onBehalfOf
+            )
+            await repayTx.wait(1)
+            console.log("✅ DAI loan repaid!")
+
+            // Step 3: Check balances after repayment
+            const newDaiBalance = await daiToken.balanceOf(deployer)
+            const newDebtBalance = await debtToken.balanceOf(deployer)
+
+            console.log(`\n📊 === AFTER REPAYMENT ===`)
+            console.log(`DAI Balance: ${ethers.formatEther(newDaiBalance)} DAI`)
+            console.log(`Remaining Debt: ${ethers.formatEther(newDebtBalance)} DAI`)
+
+            if (newDebtBalance == 0) {
+                console.log("🎉 Loan fully repaid! Your collateral is now free.")
+            } else {
+                console.log(
+                    `💡 Partial repayment completed. ${ethers.formatEther(newDebtBalance)} DAI debt remaining.`,
+                )
+            }
+
+            // Show updated borrowing capacity
+            console.log("\n=== UPDATED BORROWING CAPACITY ===")
+            await checkBorrowingCapacity(pool)
+        } else {
+            console.log("ℹ️ No debt to repay.")
+        }
+    } catch (error) {
+        console.log("❌ Repayment failed:", error.message)
+
+        // Common error handling
+        if (error.message.includes("insufficient balance")) {
+            console.log(
+                "💡 Make sure you have enough DAI to cover the repayment + any interest accrued.",
+            )
+        } else if (error.message.includes("allowance")) {
+            console.log("💡 DAI approval might have failed. Try increasing gas limit.")
+        }
     }
 }
 
