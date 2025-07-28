@@ -1,16 +1,15 @@
 const { getNamedAccounts } = require("hardhat")
-const { getWeth } = require("../scripts/getWeth")
+const { getWeth, Deposit_Amount } = require("../scripts/getWeth")
 
 async function main() {
     //the protocol treats everthings as an ERC20 token
     await getWeth()
-    // const { deployer } = await getNamedAccounts
 
-    // Get the pool contract
     const pool = await getLendingPoolAddress()
 
-    // Now you can use the pool for deposits/withdrawals
     await depositToAave(pool)
+
+    await borrowFromAave(pool)
 }
 
 async function getLendingPoolAddress() {
@@ -39,7 +38,6 @@ async function getLendingPoolAddress() {
 async function depositToAave(pool) {
     const { deployer } = await getNamedAccounts()
     const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
-    const depositAmount = ethers.parseEther("1")
 
     // Get signer and WETH contract
     const deployerSigner = await ethers.getSigner(deployer)
@@ -48,7 +46,7 @@ async function depositToAave(pool) {
     try {
         // Step 1: Approve Aave Pool to spend WETH (WETH already obtained from getWeth())
         console.log("Approving WETH for Aave...")
-        const approveTx = await iweth.connect(deployerSigner).approve(pool.target, depositAmount)
+        const approveTx = await iweth.connect(deployerSigner).approve(pool.target, Deposit_Amount)
         await approveTx.wait(1)
         console.log("✅ WETH approved!")
 
@@ -56,7 +54,7 @@ async function depositToAave(pool) {
         console.log("Supplying WETH to Aave...")
         const supplyTx = await pool.connect(deployerSigner).supply(
             wethAddress, // asset
-            depositAmount, // amount
+            Deposit_Amount, // amount
             deployer, // onBehalfOf
             0, // referralCode
         )
@@ -70,6 +68,42 @@ async function depositToAave(pool) {
         console.log(`aWETH Balance: ${ethers.formatEther(aTokenBalance)} aWETH`)
     } catch (error) {
         console.log("Deposit failed:", error.message)
+    }
+}
+
+async function borrowFromAave(pool) {
+    const { deployer } = await getNamedAccounts()
+    const daiAddress = "0x6B175474E89094C44Da98b954EedeAC495271d0F" // Mainnet DAI
+    const borrowAmount = ethers.parseEther("100") // Borrow 100 DAI
+
+    const deployerSigner = await ethers.getSigner(deployer)
+
+    try {
+        console.log("Borrowing DAI from Aave...")
+
+        // Borrow DAI against WETH collateral
+        const borrowTx = await pool.connect(deployerSigner).borrow(
+            daiAddress, // asset to borrow
+            borrowAmount, // amount to borrow
+            2, // interestRateMode 
+            0, // referralCode
+            deployer, // onBehalfOf
+        )
+        await borrowTx.wait(1)
+        console.log("✅ DAI borrowed from Aave!")
+
+        // Check DAI balance
+        const daiToken = await ethers.getContractAt("IERC20", daiAddress)
+        const daiBalance = await daiToken.balanceOf(deployer)
+        console.log(`DAI Balance: ${ethers.formatEther(daiBalance)} DAI`)
+
+        // Check debt token balance
+        const reserveData = await pool.getReserveData(daiAddress)
+        const debtToken = await ethers.getContractAt("IERC20", reserveData.variableDebtTokenAddress)
+        const debtBalance = await debtToken.balanceOf(deployer)
+        console.log(`DAI Debt Balance: ${ethers.formatEther(debtBalance)} DAI`)
+    } catch (error) {
+        console.log("Borrow failed:", error.message)
     }
 }
 
