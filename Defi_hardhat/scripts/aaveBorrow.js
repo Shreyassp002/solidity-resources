@@ -6,7 +6,11 @@ async function main() {
     await getWeth()
     // const { deployer } = await getNamedAccounts
 
-    await getLendingPoolAddress()
+    // Get the pool contract
+    const pool = await getLendingPoolAddress()
+
+    // Now you can use the pool for deposits/withdrawals
+    await depositToAave(pool)
 }
 
 async function getLendingPoolAddress() {
@@ -15,7 +19,7 @@ async function getLendingPoolAddress() {
 
     // 2. GET POOL ADDRESSES PROVIDER CONTRACT (V3) - Using installed package
     const poolAddressesProvider = await ethers.getContractAt(
-        "@aave/core-v3/contracts/interfaces/IPoolAddressesProvider.sol:IPoolAddressesProvider",
+        "IPoolAddressesProvider",
         poolAddressesProviderAddress,
     )
 
@@ -26,13 +30,47 @@ async function getLendingPoolAddress() {
     console.log("Pool address:", poolAddress)
 
     // 4. GET POOL CONTRACT - Using installed package
-    const pool = await ethers.getContractAt(
-        "@aave/core-v3/contracts/interfaces/IPool.sol:IPool",
-        poolAddress,
-    )
+    const pool = await ethers.getContractAt("IPool", poolAddress)
     console.log("Pool contract connected!")
 
     return pool
+}
+
+async function depositToAave(pool) {
+    const { deployer } = await getNamedAccounts()
+    const wethAddress = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2"
+    const depositAmount = ethers.parseEther("1")
+
+    // Get signer and WETH contract
+    const deployerSigner = await ethers.getSigner(deployer)
+    const iweth = await ethers.getContractAt("IWETH", wethAddress)
+
+    try {
+        // Step 1: Approve Aave Pool to spend WETH (WETH already obtained from getWeth())
+        console.log("Approving WETH for Aave...")
+        const approveTx = await iweth.connect(deployerSigner).approve(pool.target, depositAmount)
+        await approveTx.wait(1)
+        console.log("✅ WETH approved!")
+
+        // Step 2: Supply WETH to Aave V3
+        console.log("Supplying WETH to Aave...")
+        const supplyTx = await pool.connect(deployerSigner).supply(
+            wethAddress, // asset
+            depositAmount, // amount
+            deployer, // onBehalfOf
+            0, // referralCode
+        )
+        await supplyTx.wait(1)
+        console.log("✅ WETH supplied to Aave!")
+
+        // Step 3: Check aToken balance
+        const reserveData = await pool.getReserveData(wethAddress)
+        const aToken = await ethers.getContractAt("IERC20", reserveData.aTokenAddress)
+        const aTokenBalance = await aToken.balanceOf(deployer)
+        console.log(`aWETH Balance: ${ethers.formatEther(aTokenBalance)} aWETH`)
+    } catch (error) {
+        console.log("Deposit failed:", error.message)
+    }
 }
 
 main()
