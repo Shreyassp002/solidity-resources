@@ -1,0 +1,11 @@
+{
+    "name": "LAB",
+    "description": "An adorable LAB pup!",
+    "image": "https://ipfs.io/ipfs/bafkreihhidxg5psie3duwgvjydybsfvdlstrz3us2jlemfjd5mvltx24by?filename=yellow_labrador.jpeg",
+    "attributes": [
+        {
+            "trait_type": "cuteness",
+            "value": 100
+        }
+    ]
+}

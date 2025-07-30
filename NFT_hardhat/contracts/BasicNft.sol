@@ -5,7 +5,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 contract BasicNft is ERC721 {
     string public constant TOKEN_URI =
-        "ipfs://bafybeig37ioir76s7mg5oobetncojcm3c3hxasyd4rvid4jqhy4gkaheg4/?filename=0-PUG.json";
+        "https://ipfs.io/ipfs/bafkreiacfzqa3nw4jzrnkkk5xnm3bofoh3mpxastf4w4cy5rjlvuu5mfiy?filename=lab.json";
     uint256 private s_tokenCounter;
 
     constructor() ERC721("Doggo", "DOGY") {
@@ -18,7 +18,7 @@ contract BasicNft is ERC721 {
         return s_tokenCounter;
     }
 
-    function tokenURI(uint256 /*tokenid*/) public view override  returns (string memory) {
+    function tokenURI(uint256 /*tokenid*/) public view override returns (string memory) {
         return TOKEN_URI;
     }
 
