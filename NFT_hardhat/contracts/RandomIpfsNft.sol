@@ -47,7 +47,6 @@ contract RandomIpfsNft is ERC721URIStorage, VRFConsumerBaseV2Plus {
         i_callbackGasLimit = callbackGasLimit;
         s_dogTokenUris = dogTokenUris;
         s_tokenCounter = 0;
-        transferOwnership(msg.sender); // Set the deployer as owner
     }
 
     function requestNft() public payable returns (uint256 requestId) {
