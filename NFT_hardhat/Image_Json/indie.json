@@ -1,0 +1,11 @@
+{
+    "name": "INDIE",
+    "description": "An adorable INDIE pup!",
+    "image": "https://ipfs.io/ipfs/bafybeiabwn3davdyby5ulgxmg3ibrsijrqxvvm7u76h3ilbnecqznfluhq",
+    "attributes": [
+        {
+            "trait_type": "cuteness",
+            "value": 100
+        }
+    ]
+}

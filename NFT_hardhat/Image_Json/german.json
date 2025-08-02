@@ -1,0 +1,11 @@
+{
+    "name": "GERMAN",
+    "description": "An adorable GERMAN pup!",
+    "image": "https://ipfs.io/ipfs/bafybeibp7jeha3kbuveucyu63nj245buqkybzu23w2qfhsk2t4dw57hksu",
+    "attributes": [
+        {
+            "trait_type": "cuteness",
+            "value": 100
+        }
+    ]
+}
